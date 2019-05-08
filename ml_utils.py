@@ -66,3 +66,7 @@ def products_with_sentence_num(record):
     products_id = mzz[3]
     sentence_num = [len(splitSentence(record[13]))]
     return (products_id, sentence_num)
+
+def filter_customers(record):
+    mzz = record.split("\t")
+
