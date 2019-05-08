@@ -3,16 +3,6 @@ import nltk
 import nltk.data
 
 
-def countthelen(record):
-    mzz = record.split("\t")
-    return len(mzz)
-
-
-def haha(record):
-    mzz = record.split("\t")
-    user_id = mzz[1]
-
-
 def splitSentence(paragraph):
     tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
     sentences = tokenizer.tokenize(paragraph)
@@ -48,12 +38,6 @@ def countProduct(record):
     return (mzz[3], 1)
 
 
-def split_reviews(record):
-    mzz = record.split("\t")
-    mzz[13] = splitSentence(mzz[13])
-    return mzz
-
-
 def customers_with_sentence_num(record):
     mzz = record.split("\t")
     user_id = mzz[1]
@@ -66,7 +50,3 @@ def products_with_sentence_num(record):
     products_id = mzz[3]
     sentence_num = [len(splitSentence(record[13]))]
     return (products_id, sentence_num)
-
-def filter_customers(record):
-    mzz = record.split("\t")
-
