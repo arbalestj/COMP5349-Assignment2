@@ -9,7 +9,7 @@ from operator import add
 
 class Music(object):
     def __init__(self):
-        sc = SparkContext("local[4]", "simple")
+        sc = SparkContext()
         original = sc.textFile("Music.tsv")
         header = original.first()
         original = original.filter(lambda x: x != header)
