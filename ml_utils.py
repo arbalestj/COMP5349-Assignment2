@@ -13,6 +13,10 @@ def KillShortReviews(record):
     mzz = record.split("\t")
     review_body = mzz[13]
     sentence_list = splitSentence(review_body)
+    result = len(sentence_list)
+    if result >= 2:
+        pass
+        #print(mzz[1], result, sentence_list)
     return len(sentence_list)
 
 
@@ -41,12 +45,12 @@ def countProduct(record):
 def customers_with_sentence_num(record):
     mzz = record.split("\t")
     user_id = mzz[1]
-    sentence_num = [len(splitSentence(record[13]))]
+    sentence_num = [len(splitSentence(mzz[13]))]
     return (user_id, sentence_num)
 
 
 def products_with_sentence_num(record):
     mzz = record.split("\t")
     products_id = mzz[3]
-    sentence_num = [len(splitSentence(record[13]))]
+    sentence_num = [len(splitSentence(mzz[13]))]
     return (products_id, sentence_num)

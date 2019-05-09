@@ -13,17 +13,15 @@ if __name__ == "__main__":
     Num_of_Products = len(music.Products.collect())
 
     # Stage 1: user-review distribution
-    most_reviews_a_user_create = max(music.Customers.values().collect())
+    most_reviews_a_user_create = music.Customers.values().max()
 
-    # Sorted_Customers = music.Customers.map(swap).sortByKey(ascending=False).map(swap)
     Sorted_Customers = music.Customers.sortBy(lambda x: x[1], ascending=False)
     Top10_Reviewers = Sorted_Customers.take(10)
     Median_of_Reviewers = Sorted_Customers.collect()[middle(Num_of_Customers)]
 
     # Stage 1: product-review distribution
-    most_reviews_a_product_has = max(music.Products.values().collect())
+    most_reviews_a_product_has = music.Products.values().max()
 
-    # Sorted_Products = music.Products.map(swap).sortByKey(ascending=False).map(swap)
     Sorted_Products = music.Products.sortBy(lambda x: x[1], ascending=False)
     Top10_Products = Sorted_Products.take(10)
     Median_of_Products = Sorted_Products.collect()[middle(Num_of_Products)]
@@ -38,5 +36,4 @@ if __name__ == "__main__":
     f.write("most_reviews_a_product_has" + str(most_reviews_a_product_has) + "\n")
     f.write("Top10_Products" + str(Top10_Products) + "\n")
     f.write("Median_of_Products:" + str(Median_of_Products))
-
     f.close()

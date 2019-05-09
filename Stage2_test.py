@@ -1,23 +1,33 @@
-from Music import Music
+from pyspark import SparkContext
 from ml_utils import *
 import os
 import time
+from operator import add
 
 os.environ['JAVA_HOME'] = "/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home"
 
-# memory = '6g'
-# pyspark_submit_args = ' --driver-memory ' + memory + ' pyspark-shell'
-# os.environ["PYSPARK_SUBMIT_ARGS"] = pyspark_submit_args
+memory = '6g'
+pyspark_submit_args = ' --driver-memory ' + memory + ' pyspark-shell'
+os.environ["PYSPARK_SUBMIT_ARGS"] = pyspark_submit_args
 
 if __name__ == "__main__":
     start = time.time()
-    music = Music()
-    Num_of_Reviews = music.Reviews.count()
+    sc = SparkContext("local[4]", "simple")
+    original = sc.textFile("Music.tsv")
+    header = original.first()
+    original = original.filter(lambda x: x != header)
+    # eliminate the first row
+
+    Reviews = original.map(countReview)  # .cache()
+    Customers = original.map(countCustomer).reduceByKey(add).cache()
+    Products = original.map(countProduct).reduceByKey(add).cache()
+
+    Num_of_Reviews = Reviews.count()
     print("Num_of_Reviews: ", Num_of_Reviews)
 
     # filter the reviews whose body contains less than 2 sentences
-    Reviews_filter_short = music.og.filter(lambda x: KillShortReviews(x) >= 2)
-    print(Reviews_filter_short.count())
+    Reviews_filter_short = original.filter(lambda x: KillShortReviews(x) >= 2)
+    # print(Reviews_filter_short.count())
 
     '''
     determine the median number of reviews that a customer published
@@ -29,7 +39,7 @@ if __name__ == "__main__":
     '''
     Step1: determine the location of the median
     '''
-    Num_of_Customers = music.Customers.count()
+    Num_of_Customers = Customers.count()
     mid = middle(Num_of_Customers)
 
     '''
@@ -47,7 +57,7 @@ if __name__ == "__main__":
     So we apply [0][0][1]
     '''
 
-    Median_of_Reviewers = music.Customers \
+    Median_of_Reviewers = Customers \
         .sortBy(lambda x: x[1], ascending=False) \
         .zipWithIndex() \
         .filter(lambda x: x[1] == mid)
@@ -57,9 +67,9 @@ if __name__ == "__main__":
     For product, it's likewise.
     '''
 
-    Num_of_Products = music.Products.count()
+    Num_of_Products = Products.count()
     mid = middle(Num_of_Products)
-    Median_of_Products = music.Products \
+    Median_of_Products = Products \
         .sortBy(lambda x: x[1], ascending=False) \
         .zipWithIndex() \
         .filter(lambda x: x[1] == mid)
@@ -69,8 +79,8 @@ if __name__ == "__main__":
     Then we select the Customers who published reviews less than the median level
     Then we select the Products which received reviews less than the median level
     '''
-    Customers_below_median = music.Customers.filter(lambda x: x[1] <= Median_num_of_reviews_a_user_published)
-    Products_below_median = music.Products.filter(lambda x: x[1] <= Median_num_of_reviews_a_product_received)
+    Customers_below_median = Customers.filter(lambda x: x[1] <= Median_num_of_reviews_a_user_published)
+    Products_below_median = Products.filter(lambda x: x[1] <= Median_num_of_reviews_a_product_received)
 
     '''
     We filter out such Customers and Products
@@ -83,18 +93,20 @@ if __name__ == "__main__":
         .map(lambda x: (x.split("\t")[3], x)) \
         .subtractByKey(Products_below_median) \
         .map(lambda x: x[1])
-    print("Filter_Result: ", Filter_Result.count())
+    #print("Filter_Result: ", Filter_Result.count())
 
     Top_10_Customers_who_published_the_longest_sentences = Filter_Result \
         .map(customers_with_sentence_num) \
         .reduceByKey(lambda x, y: x + y) \
-        .sortBy(lambda x: x[1]) \
+        .map(lambda x: (x[0], max(x[1]))) \
+        .sortBy(lambda x: x[1], ascending=False) \
         .take(10)
 
     Top_10_Products_which_received_the_longest_sentences = Filter_Result \
         .map(products_with_sentence_num) \
         .reduceByKey(lambda x, y: x + y) \
-        .sortBy(lambda x: x[1]) \
+        .map(lambda x: (x[0], max(x[1]))) \
+        .sortBy(lambda x: x[1], ascending=False) \
         .take(10)
 
     '''
@@ -127,7 +139,7 @@ if __name__ == "__main__":
     f.write("Num of Products: " + str(Num_of_Products) + "\n")
     f.write("Median_num_of_reviews_a_product_received: " + str(Median_num_of_reviews_a_product_received) + "\n")
 
-    f.write("Filter_Result: " + str(Filter_Result.collect()) + "\n")
+    #f.write("Filter_Result: " + str(Filter_Result.collect()) + "\n")
     f.write("Top_10_Customers_who_published_the_longest_sentences")
     f.write(str(Top_10_Customers_who_published_the_longest_sentences))
     f.write("\n")

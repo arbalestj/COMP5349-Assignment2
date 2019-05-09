@@ -17,6 +17,7 @@ if __name__ == "__main__":
 
     # filter the reviews whose body contains less than 2 sentences
     Reviews_filter_short = music.og.filter(lambda x: KillShortReviews(x) >= 2)
+    print(Reviews_filter_short.count())
 
     '''
     determine the median number of reviews that a customer published
@@ -28,8 +29,8 @@ if __name__ == "__main__":
     '''
     Step1: determine the location of the median
     '''
-    Num_of_Customer = music.Customers.count()
-    mid = middle(Num_of_Customer)
+    Num_of_Customers = music.Customers.count()
+    mid = middle(Num_of_Customers)
 
     '''
     Step2: sort the customers and extract what we want:
@@ -68,8 +69,8 @@ if __name__ == "__main__":
     Then we select the Customers who published reviews less than the median level
     Then we select the Products which received reviews less than the median level
     '''
-    Customers_below_median = music.Customers.filter(lambda x: x[1] <= Median_num_of_reviews_a_user_published)
-    Products_below_median = music.Products.filter(lambda x: x[1] <= Median_num_of_reviews_a_product_received)
+    Customers_below_median = music.Customers.filter(lambda x: x[1] < Median_num_of_reviews_a_user_published)
+    Products_below_median = music.Products.filter(lambda x: x[1] < Median_num_of_reviews_a_product_received)
 
     '''
     We filter out such Customers and Products
@@ -84,9 +85,12 @@ if __name__ == "__main__":
         .map(lambda x: x[1])
     print("Filter_Result: ", Filter_Result.count())
 
+
+
     Top10_Customers = Filter_Result \
         .map(customers_with_sentence_num) \
         .reduceByKey(lambda x, y: x + y) \
+        .map(lambda x: (x[0], sorted(x[1]))) \
         .map(lambda x: (x[0], x[1][middle(len(x[1]))])) \
         .sortBy(lambda x: x[1], ascending=False) \
         .take(10)
@@ -94,12 +98,26 @@ if __name__ == "__main__":
     Top10_Products = Filter_Result \
         .map(products_with_sentence_num) \
         .reduceByKey(lambda x, y: x + y) \
+        .map(lambda x: (x[0], sorted(x[1]))) \
         .map(lambda x: (x[0], x[1][middle(len(x[1]))])) \
         .sortBy(lambda x: x[1], ascending=False) \
         .take(10)
 
     print(Top10_Customers)
     print(Top10_Products)
+
     end = time.time()
 
+    f = open("Stage2.txt", "w")
+    f.write("Num of Reviews: " + str(Num_of_Reviews) + "\n")
+
+    f.write("Num of Customers: " + str(Num_of_Customers) + "\n")
+    f.write("Median_num_of_reviews_a_user_published: " + str(Median_num_of_reviews_a_user_published) + "\n")
+
+    f.write("Num of Products: " + str(Num_of_Products) + "\n")
+    f.write("Median_num_of_reviews_a_product_received: " + str(Median_num_of_reviews_a_product_received) + "\n")
+
+    f.write("Top10_Customers" + str(Top10_Customers) + "\n")
+    f.write("Top10_Products" + str(Top10_Products) + "\n")
+    f.close()
     print(end - start)
