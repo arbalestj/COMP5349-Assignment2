@@ -10,7 +10,7 @@ from operator import add
 class Music(object):
     def __init__(self):
         sc = SparkContext()
-        original = sc.textFile("test_Music.tsv")
+        original = sc.textFile("Music.tsv")
         header = original.first()
         original = original.filter(lambda x: x != header)
         # eliminate the first row

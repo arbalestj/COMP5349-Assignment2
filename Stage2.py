@@ -5,9 +5,9 @@ import time
 
 os.environ['JAVA_HOME'] = "/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home"
 
-# memory = '6g'
-# pyspark_submit_args = ' --driver-memory ' + memory + ' pyspark-shell'
-# os.environ["PYSPARK_SUBMIT_ARGS"] = pyspark_submit_args
+memory = '6g'
+pyspark_submit_args = ' --driver-memory ' + memory + ' pyspark-shell'
+os.environ["PYSPARK_SUBMIT_ARGS"] = pyspark_submit_args
 
 if __name__ == "__main__":
     start = time.time()
@@ -85,8 +85,6 @@ if __name__ == "__main__":
         .map(lambda x: x[1])
     print("Filter_Result: ", Filter_Result.count())
 
-
-
     Top10_Customers = Filter_Result \
         .map(customers_with_sentence_num) \
         .reduceByKey(lambda x, y: x + y) \
@@ -109,6 +107,7 @@ if __name__ == "__main__":
     end = time.time()
 
     f = open("Stage2.txt", "w")
+    f.write("time spent: " + str(end - start) + "\n")
     f.write("Num of Reviews: " + str(Num_of_Reviews) + "\n")
 
     f.write("Num of Customers: " + str(Num_of_Customers) + "\n")

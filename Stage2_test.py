@@ -12,7 +12,7 @@ os.environ["PYSPARK_SUBMIT_ARGS"] = pyspark_submit_args
 
 if __name__ == "__main__":
     start = time.time()
-    sc = SparkContext("local[4]", "simple")
+    sc = SparkContext()
     original = sc.textFile("Music.tsv")
     header = original.first()
     original = original.filter(lambda x: x != header)
@@ -79,21 +79,26 @@ if __name__ == "__main__":
     Then we select the Customers who published reviews less than the median level
     Then we select the Products which received reviews less than the median level
     '''
-    Customers_below_median = Customers.filter(lambda x: x[1] <= Median_num_of_reviews_a_user_published)
-    Products_below_median = Products.filter(lambda x: x[1] <= Median_num_of_reviews_a_product_received)
+    customers_dict = {}
+    for i in Customers.collect():
+        customers_dict[i[0]] = i[1]
+    prodcuts_dict = {}
+    for i in Products.collect():
+        prodcuts_dict[i[0]] = i[1]
+    # print(customers_dict)
+    # print(Customers.collect())
+    ##Customers_below_median = Customers.filter(lambda x: x[1] <= Median_num_of_reviews_a_user_published)
+    # Products_below_median = Products.filter(lambda x: x[1] <= Median_num_of_reviews_a_product_received)
 
     '''
     We filter out such Customers and Products
     Note that for each row, there are 15 attributions. The 2th is the customer_id, while the 4th is the Product_id 
     '''
     Filter_Result = Reviews_filter_short \
-        .map(lambda x: (x.split("\t")[1], x)) \
-        .subtractByKey(Customers_below_median) \
-        .map(lambda x: x[1]) \
-        .map(lambda x: (x.split("\t")[3], x)) \
-        .subtractByKey(Products_below_median) \
-        .map(lambda x: x[1])
-    #print("Filter_Result: ", Filter_Result.count())
+        .filter(lambda x: customers_dict[x.split("\t")[1]] > Median_num_of_reviews_a_user_published
+                          and prodcuts_dict[x.split("\t")[3]] > Median_num_of_reviews_a_product_received) \
+        .cache()
+    print("Filter_Result: ", Filter_Result.count())
 
     Top_10_Customers_who_published_the_longest_sentences = Filter_Result \
         .map(customers_with_sentence_num) \
@@ -131,6 +136,7 @@ if __name__ == "__main__":
     end = time.time()
 
     f = open("Stage2.txt", "w")
+    f.write("time spent: " + str(end - start) + "\n")
     f.write("Num of Reviews: " + str(Num_of_Reviews) + "\n")
 
     f.write("Num of Customers: " + str(Num_of_Customers) + "\n")
@@ -139,7 +145,7 @@ if __name__ == "__main__":
     f.write("Num of Products: " + str(Num_of_Products) + "\n")
     f.write("Median_num_of_reviews_a_product_received: " + str(Median_num_of_reviews_a_product_received) + "\n")
 
-    #f.write("Filter_Result: " + str(Filter_Result.collect()) + "\n")
+    # f.write("Filter_Result: " + str(Filter_Result.collect()) + "\n")
     f.write("Top_10_Customers_who_published_the_longest_sentences")
     f.write(str(Top_10_Customers_who_published_the_longest_sentences))
     f.write("\n")

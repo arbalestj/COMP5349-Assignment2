@@ -22,15 +22,12 @@ if __name__ == "__main__":
 
     print(Positive_Reviews.count())
 
-
-    '''
     Negative_Reviews = music.og \
         .filter(lambda x: x.split("\t")[3] == select_PID) \
         .filter(lambda x: int(x.split("\t")[7]) <= 2) \
         .map(lambda x: splitSentence(x.split("\t")[13]))
 
     print(Negative_Reviews.count())
-    '''
 
     # print(type(np.array(Positive_Reviews.collect())[0]))
 
@@ -39,20 +36,20 @@ if __name__ == "__main__":
     vector_set = np.array([])
     with tf.Session() as session:
         session.run([tf.global_variables_initializer(), tf.tables_initializer()])
-        for i in np.array(Positive_Reviews.collect()):
+        index = 0
+        for i in np.array(Negative_Reviews.collect()):
             date_time = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
             # print(i)
             message_embeddings = np.array(session.run(embed(i)))
-            #print(message_embeddings.shape)
-            print(date_time, ": ", message_embeddings.shape)
+            # print(message_embeddings.shape)
+            print(date_time, ": ", "Num: ", index, message_embeddings.shape)
+            index += 1
             for i in np.arange(message_embeddings.shape[0]):
                 vector_set = np.append(vector_set, message_embeddings[i, :])
     vector_set = vector_set.reshape(-1, 512)
-    # print(vector_set)
-    # print(vector_set.shape)
+
     norm_vector = np.sqrt(np.sum(vector_set ** 2, axis=1))[:, np.newaxis]
-    # print(norm_vector)
-    # print(norm_vector.shape)
+
     norm_matrix = norm_vector.dot(norm_vector.T)
     dot_product_matrix = vector_set.dot(vector_set.T)
     cosinedistance_matrix = 1 - dot_product_matrix / norm_matrix
@@ -75,6 +72,7 @@ if __name__ == "__main__":
             print("Embedding: [{}, ...]\n".format(message_embedding_snippet))
     '''
     f = open("Stage3.txt", 'w')
+    |
     # f.write(str(Positive_Reviews.collect()))
     f.write("total time spent: " + str(time_spent) + "s" + "\n")
     f.write("Average distance between one sentence with others" + "\n" + str(distance_for_each) + "\n")
