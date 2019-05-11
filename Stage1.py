@@ -1,16 +1,18 @@
 from Music import Music
 from ml_utils import *
 import os
+import time
 
 os.environ['JAVA_HOME'] = "/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home"
 
 if __name__ == "__main__":
+    start = time.time()
     music = Music()
 
     # Stage 1: Overall
-    Num_Of_Reviews = len(music.Reviews.collect())
-    Num_of_Customers = len(music.Customers.collect())
-    Num_of_Products = len(music.Products.collect())
+    Num_Of_Reviews = music.Reviews.count()
+    Num_of_Customers = music.Customers.count()
+    Num_of_Products = music.Products.count()
 
     # Stage 1: user-review distribution
     most_reviews_a_user_create = music.Customers.values().max()
@@ -25,7 +27,8 @@ if __name__ == "__main__":
     Sorted_Products = music.Products.sortBy(lambda x: x[1], ascending=False)
     Top10_Products = Sorted_Products.take(10)
     Median_of_Products = Sorted_Products.collect()[middle(Num_of_Products)]
-
+    end = time.time()
+    print(end - start)
     f = open("Stage1.txt", "w")
     f.write("Num of Reviews: " + str(Num_Of_Reviews) + "\n")
     f.write("Num of Products: " + str(Num_of_Products) + "\n")

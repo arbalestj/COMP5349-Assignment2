@@ -3,35 +3,34 @@ from ml_utils import *
 import os
 import tensorflow as tf
 import tensorflow_hub as hub
-import gensim
 import time
+from datetime import datetime
 
 model_url = "https://tfhub.dev/google/universal-sentence-encoder/2"
 embed = hub.Module(model_url)
 
 if __name__ == "__main__":
     start = time.time()
-    # Load Google's pre-trained Word2Vec model.
-    model = gensim.models.Word2Vec.load_word2vec_format
     music = Music()
-    select_PID = music.Products.sortBy(lambda x: x[1], ascending=False).take(10)[9][0]
+    select_PID = music.Products.sortBy(lambda x: x[1], ascending=False).take(10)[0][0]
     print(select_PID)
-    '''
-        Positive_Reviews = music.og \
+
+    Positive_Reviews = music.og \
         .filter(lambda x: x.split("\t")[3] == select_PID) \
         .filter(lambda x: int(x.split("\t")[7]) >= 4) \
         .map(lambda x: splitSentence(x.split("\t")[13]))
 
     print(Positive_Reviews.count())
+
+
     '''
-
-
     Negative_Reviews = music.og \
         .filter(lambda x: x.split("\t")[3] == select_PID) \
         .filter(lambda x: int(x.split("\t")[7]) <= 2) \
         .map(lambda x: splitSentence(x.split("\t")[13]))
 
     print(Negative_Reviews.count())
+    '''
 
     # print(type(np.array(Positive_Reviews.collect())[0]))
 
@@ -40,10 +39,12 @@ if __name__ == "__main__":
     vector_set = np.array([])
     with tf.Session() as session:
         session.run([tf.global_variables_initializer(), tf.tables_initializer()])
-        for i in np.array(Negative_Reviews.collect()):
+        for i in np.array(Positive_Reviews.collect()):
+            date_time = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
             # print(i)
             message_embeddings = np.array(session.run(embed(i)))
-            print(message_embeddings.shape)
+            #print(message_embeddings.shape)
+            print(date_time, ": ", message_embeddings.shape)
             for i in np.arange(message_embeddings.shape[0]):
                 vector_set = np.append(vector_set, message_embeddings[i, :])
     vector_set = vector_set.reshape(-1, 512)
