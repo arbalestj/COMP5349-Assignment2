@@ -69,20 +69,20 @@ if __name__ == "__main__":
     Then we select the Customers who published reviews less than the median level
     Then we select the Products which received reviews less than the median level
     '''
-    Customers_below_median = music.Customers.filter(lambda x: x[1] < Median_num_of_reviews_a_user_published)
-    Products_below_median = music.Products.filter(lambda x: x[1] < Median_num_of_reviews_a_product_received)
-
+    customers_dict = {}
+    for i in music.Customers.collect():
+        customers_dict[i[0]] = i[1]
+    prodcuts_dict = {}
+    for i in music.Products.collect():
+        prodcuts_dict[i[0]] = i[1]
     '''
     We filter out such Customers and Products
     Note that for each row, there are 15 attributions. The 2th is the customer_id, while the 4th is the Product_id 
     '''
     Filter_Result = Reviews_filter_short \
-        .map(lambda x: (x.split("\t")[1], x)) \
-        .subtractByKey(Customers_below_median) \
-        .map(lambda x: x[1]) \
-        .map(lambda x: (x.split("\t")[3], x)) \
-        .subtractByKey(Products_below_median) \
-        .map(lambda x: x[1])
+        .filter(lambda x: customers_dict[x.split("\t")[1]] > Median_num_of_reviews_a_user_published
+                          and prodcuts_dict[x.split("\t")[3]] > Median_num_of_reviews_a_product_received) \
+        .cache()
     print("Filter_Result: ", Filter_Result.count())
 
     Top10_Customers = Filter_Result \

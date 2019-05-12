@@ -9,6 +9,12 @@ from datetime import datetime
 model_url = "https://tfhub.dev/google/universal-sentence-encoder/2"
 embed = hub.Module(model_url)
 
+os.environ['JAVA_HOME'] = "/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home"
+
+memory = '6g'
+pyspark_submit_args = ' --driver-memory ' + memory + ' pyspark-shell'
+os.environ["PYSPARK_SUBMIT_ARGS"] = pyspark_submit_args
+
 if __name__ == "__main__":
     start = time.time()
     music = Music()
@@ -18,17 +24,23 @@ if __name__ == "__main__":
     Positive_Reviews = music.og \
         .filter(lambda x: x.split("\t")[3] == select_PID) \
         .filter(lambda x: int(x.split("\t")[7]) >= 4) \
-        .map(lambda x: splitSentence(x.split("\t")[13]))
+        .flatMap(lambda x: splitSentence(x.split("\t")[13]))
 
     print(Positive_Reviews.count())
 
     Negative_Reviews = music.og \
         .filter(lambda x: x.split("\t")[3] == select_PID) \
         .filter(lambda x: int(x.split("\t")[7]) <= 2) \
-        .map(lambda x: splitSentence(x.split("\t")[13]))
+        .flatMap(lambda x: splitSentence(x.split("\t")[13])) \
+
 
     print(Negative_Reviews.count())
 
+    Positive_Reviews_collect = Positive_Reviews.collect()
+
+    #Negative_Reviews_collect = Negative_Reviews.collect()
+
+    # Negative_Reviews_collect = Negative_Reviews_collect.reshape()
     # print(type(np.array(Positive_Reviews.collect())[0]))
 
     # for i in np.array(Positive_Reviews.collect()):
@@ -37,15 +49,14 @@ if __name__ == "__main__":
     with tf.Session() as session:
         session.run([tf.global_variables_initializer(), tf.tables_initializer()])
         index = 0
-        for i in np.array(Negative_Reviews.collect()):
-            date_time = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
-            # print(i)
-            message_embeddings = np.array(session.run(embed(i)))
-            # print(message_embeddings.shape)
-            print(date_time, ": ", "Num: ", index, message_embeddings.shape)
-            index += 1
-            for i in np.arange(message_embeddings.shape[0]):
-                vector_set = np.append(vector_set, message_embeddings[i, :])
+        date_time = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+
+        message_embeddings = np.array(session.run(embed(Positive_Reviews_collect)))
+        print(message_embeddings.shape)
+        vector_set = message_embeddings.copy()
+
+        #print(date_time, ": ", "Num: ", index, message_embeddings.shape)
+        #vector_set = np.append(vector_set, message_embeddings[i, :])
     vector_set = vector_set.reshape(-1, 512)
 
     norm_vector = np.sqrt(np.sum(vector_set ** 2, axis=1))[:, np.newaxis]
@@ -72,7 +83,6 @@ if __name__ == "__main__":
             print("Embedding: [{}, ...]\n".format(message_embedding_snippet))
     '''
     f = open("Stage3.txt", 'w')
-    |
     # f.write(str(Positive_Reviews.collect()))
     f.write("total time spent: " + str(time_spent) + "s" + "\n")
     f.write("Average distance between one sentence with others" + "\n" + str(distance_for_each) + "\n")

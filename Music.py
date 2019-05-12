@@ -15,7 +15,7 @@ class Music(object):
         original = original.filter(lambda x: x != header)
         # eliminate the first row
 
-        self.og = original  # .cache()
+        self.og = original.cache()
         self.Reviews = original.map(countReview)  # .cache()
-        self.Customers = original.map(countCustomer).reduceByKey(add)  # .cache()
-        self.Products = original.map(countProduct).reduceByKey(add)  # .cache()
+        self.Customers = original.map(countCustomer).reduceByKey(add).cache()
+        self.Products = original.map(countProduct).reduceByKey(add).cache()
