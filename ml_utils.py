@@ -1,6 +1,7 @@
 import numpy as np
 import nltk
 import nltk.data
+nltk.data.path.append("/home/hadoop/nltk_data")
 
 
 def splitSentence(paragraph):
@@ -16,7 +17,7 @@ def KillShortReviews(record):
     result = len(sentence_list)
     if result >= 2:
         pass
-        #print(mzz[1], result, sentence_list)
+        # print(mzz[1], result, sentence_list)
     return len(sentence_list)
 
 
@@ -40,6 +41,21 @@ def countCustomer(record):
 def countProduct(record):
     mzz = record.split("\t")
     return (mzz[3], 1)
+
+
+def customers_products_sennum(record):
+    mzz = record.split("\t")
+    user_id = mzz[1]
+    products_id = mzz[3]
+    sentence_num = len(splitSentence(mzz[13]))
+    return (user_id, products_id, sentence_num)
+
+
+def sort(x):
+    if isinstance(x[1], int) is True:
+        return (x[0], np.array([x[1]]))
+    else:
+        return (x[0], sorted(x[1]))
 
 
 def customers_with_sentence_num(record):

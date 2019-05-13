@@ -2,6 +2,7 @@ from Music import Music
 from ml_utils import *
 import os
 import time
+from operator import add
 
 os.environ['JAVA_HOME'] = "/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home"
 
@@ -17,7 +18,7 @@ if __name__ == "__main__":
 
     # filter the reviews whose body contains less than 2 sentences
     Reviews_filter_short = music.og.filter(lambda x: KillShortReviews(x) >= 2)
-    print(Reviews_filter_short.count())
+    # print(Reviews_filter_short.count())
 
     '''
     determine the median number of reviews that a customer published
@@ -82,41 +83,59 @@ if __name__ == "__main__":
     Filter_Result = Reviews_filter_short \
         .filter(lambda x: customers_dict[x.split("\t")[1]] > Median_num_of_reviews_a_user_published
                           and prodcuts_dict[x.split("\t")[3]] > Median_num_of_reviews_a_product_received) \
+        .map(customers_products_sennum) \
         .cache()
-    print("Filter_Result: ", Filter_Result.count())
-
+    # print("Filter_Result: ", Filter_Result.count())
     Top10_Customers = Filter_Result \
-        .map(customers_with_sentence_num) \
-        .reduceByKey(lambda x, y: x + y) \
-        .map(lambda x: (x[0], sorted(x[1]))) \
+        .map(lambda x: (x[0], x[2])) \
+        .reduceByKey(lambda x, y: np.append(np.array(x), y)) \
+        .map(sort) \
         .map(lambda x: (x[0], x[1][middle(len(x[1]))])) \
         .sortBy(lambda x: x[1], ascending=False) \
         .take(10)
+
 
     Top10_Products = Filter_Result \
-        .map(products_with_sentence_num) \
-        .reduceByKey(lambda x, y: x + y) \
-        .map(lambda x: (x[0], sorted(x[1]))) \
+        .map(lambda x: (x[1], x[2])) \
+        .reduceByKey(lambda x, y: np.append(np.array(x), y)) \
+        .map(sort) \
         .map(lambda x: (x[0], x[1][middle(len(x[1]))])) \
         .sortBy(lambda x: x[1], ascending=False) \
         .take(10)
+'''
+ Top10_Customers = Filter_Result \
+    .map(customers_with_sentence_num) \
+    .reduceByKey(lambda x, y: x.append(y[0])) \
+    .map(lambda x: (x[0], sorted(x[1]))) \
+    .map(lambda x: (x[0], x[1][middle(len(x[1]))])) \
+    .sortBy(lambda x: x[1], ascending=False) \
+    .take(10)
 
-    print(Top10_Customers)
-    print(Top10_Products)
+Top10_Products = Filter_Result \
+    .map(products_with_sentence_num) \
+    .reduceByKey(lambda x, y: x + y) \
+    .map(lambda x: (x[0], sorted(x[1]))) \
+    .map(lambda x: (x[0], x[1][middle(len(x[1]))])) \
+    .sortBy(lambda x: x[1], ascending=False) \
+    .take(10)
+'''
 
-    end = time.time()
+print(Top10_Customers)
+print(Top10_Products)
 
-    f = open("Stage2.txt", "w")
-    f.write("time spent: " + str(end - start) + "\n")
-    f.write("Num of Reviews: " + str(Num_of_Reviews) + "\n")
+end = time.time()
 
-    f.write("Num of Customers: " + str(Num_of_Customers) + "\n")
-    f.write("Median_num_of_reviews_a_user_published: " + str(Median_num_of_reviews_a_user_published) + "\n")
+f = open("Stage2.txt", "w")
+f.write("time spent: " + str(end - start) + "\n")
+f.write("Num of Reviews: " + str(Num_of_Reviews) + "\n")
 
-    f.write("Num of Products: " + str(Num_of_Products) + "\n")
-    f.write("Median_num_of_reviews_a_product_received: " + str(Median_num_of_reviews_a_product_received) + "\n")
+f.write("Num of Customers: " + str(Num_of_Customers) + "\n")
+f.write("Median_num_of_reviews_a_user_published: " + str(Median_num_of_reviews_a_user_published) + "\n")
 
-    f.write("Top10_Customers" + str(Top10_Customers) + "\n")
-    f.write("Top10_Products" + str(Top10_Products) + "\n")
-    f.close()
-    print(end - start)
+f.write("Num of Products: " + str(Num_of_Products) + "\n")
+f.write("Median_num_of_reviews_a_product_received: " + str(Median_num_of_reviews_a_product_received) + "\n")
+
+f.write("Top10_Customers" + str(Top10_Customers) + "\n")
+f.write("Top10_Products" + str(Top10_Products) + "\n")
+f.close()
+print(end - start)
