@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     # Load documents (one per line).
 
-    hashingTF = HashingTF(1000)
+    hashingTF = HashingTF()
     tf = hashingTF.transform(Positive_Reviews)
     # tf.cache()
     idf = IDF().fit(tf)
@@ -62,30 +62,27 @@ if __name__ == "__main__":
     dot_product_matrix = CoordinateMatrix(tfidf_T)
     #print(dot_product_matrix.toBlockMatrix().toLocalMatrix())
     cosine_similarity = dot_product_matrix.toIndexedRowMatrix().columnSimilarities()  # .toBlockMatrix().toLocalMatrix().toArray()
+    print(type(cosine_similarity))
     #print(cosine_similarity.entries.collect())
     print(cosine_similarity.numCols(), cosine_similarity.numRows())
-    # print(cosine_similarity.toBlockMatrix().toLocalMatrix())
+    #print(cosine_similarity.toBlockMatrix().toLocalMatrix())
     # print(cosine_similarity.entries.collect())
-    NP_cos_sim = cosine_similarity.toBlockMatrix().toLocalMatrix().toArray().copy()
-    # .entries.filter(lambda x: x.value > 1e-6) \
-    # .map(lambda x: (x.i, x.j, 1 - x.value)) \
-    # .map(lambda x: ((x[0], 0), x[2])) \
-    # .reduceByKey(lambda x, y: x + y) \
-    # .map(lambda x: (x[0][0],0,x[1]))
-    # .map(lambda x: (0, x[2]))\
-    # .reduceByKey(lambda x, y: x + y) \
-    # .map(lambda x: x[1] * 2 / (num_Postive_Sentence * (num_Postive_Sentence - 1)))  # .saveAsTextFile("output5.txt")
+    #NP_cos_sim = cosine_similarity.toBlockMatrix().toLocalMatrix().toArray().copy()
 
-    indice = np.arange(NP_cos_sim.shape[0])
-    for i in indice:
-        NP_cos_sim[i, i] = 1
-    cosine_distance = 1 - NP_cos_sim
-    print(np.sum(np.triu(cosine_distance))*2/(num_Postive_Sentence * (num_Postive_Sentence - 1)))
-    #print(cosine_distance.mean())
-    # print(type(dot_product_matrix))
-    #f = open("mzz.txt", "w")
-    # f.write(str(CoordinateMatrix(cosine_distance).toBlockMatrix().toLocalMatrix().toArray()))
-    #f.write(str(cosine_distance))
-    # print(cosine_distance.count())
+    sum_of_similarity = cosine_similarity.entries \
+    .filter(lambda x: x.value > 1e-6) \
+    .map(lambda x: (x.i, x.j, 1 - x.value)) \
+    .map(lambda x: (0, x[2])) \
+    .reduceByKey(lambda x, y: x + y) \
+    .collect()
+    print(sum_of_similarity)
+    the_1 = (cosine_similarity.numRows()*cosine_similarity.numCols() - cosine_similarity.numRows())/2 - cosine_similarity.entries.count()
+    final = (sum_of_similarity[0][1]+the_1)*2/(num_Postive_Sentence*(num_Postive_Sentence-1))
+    print(final)
+    end = time.time()
+    time_spent = end - start
+    f = open("Stage4.txt","w")
+    f.write("time_spent: "+str(time_spent)+"\n")
+    f.write("the final is:" + str(final) +"\n")
+    f.close()
 
-    # print()fil
