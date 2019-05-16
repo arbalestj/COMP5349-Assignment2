@@ -1,6 +1,8 @@
 import numpy as np
 import nltk
 import nltk.data
+from pyspark.mllib.linalg.distributed import *
+
 nltk.data.path.append("/home/hadoop/nltk_data")
 
 
@@ -58,6 +60,18 @@ def sort(x):
         return (x[0], sorted(x[1]))
 
 
+def sb(x, index):
+    result = []
+    # print(type(x))
+
+    for i in np.arange(len(x)):
+        i = int(i)
+        if x[i] != 0:
+            result.append((index, i, x[i]))
+
+    return result
+
+
 def customers_with_sentence_num(record):
     mzz = record.split("\t")
     user_id = mzz[1]
@@ -70,3 +84,21 @@ def products_with_sentence_num(record):
     products_id = mzz[3]
     sentence_num = [len(splitSentence(mzz[13]))]
     return (products_id, sentence_num)
+
+
+def MatrixProduct_Spark(mat1, mat2):
+    mat1 = CoordinateMatrix(mat1)
+    mat2 = CoordinateMatrix(mat2)
+    mat1 = mat1.entries.map(lambda entry: (entry.j, (entry.i, entry.value)))
+    mat2 = mat2.entries.map(lambda entry: (entry.i, (entry.j, entry.value)))
+    matrix_entries = mat1.join(mat2).values().map(lambda x: ((x[0][0], x[1][0]), x[0][1] * x[1][1])).reduceByKey(
+        lambda x, y: x + y).map(lambda x: MatrixEntry(x[0][0], x[0][1], x[1]))
+    matrix = CoordinateMatrix(matrix_entries)
+    return matrix
+
+def explode(row):
+    vec, i = row
+    for j, v in zip(vec.indices, vec.values):
+        # print("vec.indices", vec.indices)
+        # print("vec.values", vec.values)
+        yield i, j, v

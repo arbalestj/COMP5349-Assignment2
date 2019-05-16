@@ -6,6 +6,7 @@ import tensorflow_hub as hub
 import time
 from datetime import datetime
 
+
 model_url = "https://tfhub.dev/google/universal-sentence-encoder/2"
 embed = hub.Module(model_url)
 
@@ -45,6 +46,8 @@ if __name__ == "__main__":
 
     # for i in np.array(Positive_Reviews.collect()):
     #    print(i)
+
+
     vector_set = np.array([])
     with tf.Session() as session:
         session.run([tf.global_variables_initializer(), tf.tables_initializer()])
