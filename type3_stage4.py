@@ -1,12 +1,14 @@
 from Music import Music
 from ml_utils import *
 import os
-import numpy as np
-
-np.set_printoptions(threshold=np.inf)
+import tensorflow as tf
+import tensorflow_hub as hub
 import time
-
 from datetime import datetime
+
+
+model_url = "https://tfhub.dev/google/universal-sentence-encoder/2"
+embed = hub.Module(model_url)
 
 os.environ['JAVA_HOME'] = "/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home"
 
@@ -17,69 +19,75 @@ os.environ["PYSPARK_SUBMIT_ARGS"] = pyspark_submit_args
 if __name__ == "__main__":
     start = time.time()
     music = Music()
-    select_PID = music.Products.sortBy(lambda x: x[1], ascending=False).take(10)[9][0]
+    select_PID = music.Products.sortBy(lambda x: x[1], ascending=False).take(10)[0][0]
     print(select_PID)
 
     Positive_Reviews = music.og \
         .filter(lambda x: x.split("\t")[3] == select_PID) \
         .filter(lambda x: int(x.split("\t")[7]) >= 4) \
         .flatMap(lambda x: splitSentence(x.split("\t")[13]))
-    num_Postive_Sentence = Positive_Reviews.count()
-    print("total num of sentences in positive reviews:", num_Postive_Sentence)
+
+    print(Positive_Reviews.count())
 
     Negative_Reviews = music.og \
         .filter(lambda x: x.split("\t")[3] == select_PID) \
         .filter(lambda x: int(x.split("\t")[7]) <= 2) \
-        .flatMap(lambda x: splitSentence(x.split("\t")[13]))
-    print("total num of sentences in negative reviews:", Negative_Reviews.count())
+        .flatMap(lambda x: splitSentence(x.split("\t")[13])) \
 
-    # Positive_Reviews_collect = Positive_Reviews.collect()
 
-    from pyspark.mllib.feature import HashingTF, IDF
+    print(Negative_Reviews.count())
 
-    # Load documents (one per line).
+    Positive_Reviews_collect = Positive_Reviews.collect()
 
-    hashingTF = HashingTF()
-    tf = hashingTF.transform(Positive_Reviews)
-    # tf.cache()
-    idf = IDF().fit(tf)
-    tfidf = idf.transform(tf)
-    # print("the shape of tfidf matrix, row represents num of sentences, column represents num of attributions",np.array(tfidf.collect()).shape)
-    # print(tfidf.collect())
-    sb = tfidf.map(lambda x: x.numNonzeros())
-    # print("each sentence's num of nonzero element: ", sb.collect())
-    print("In total there are ", np.sum(np.array(sb.collect())), "nonzero element in tfidf matrix")
+    #Negative_Reviews_collect = Negative_Reviews.collect()
 
-    tfidf = tfidf.zipWithIndex()  # .cache()
-    tfidf = tfidf.flatMap(explode).cache()
+    # Negative_Reviews_collect = Negative_Reviews_collect.reshape()
+    # print(type(np.array(Positive_Reviews.collect())[0]))
 
-    # print("tfidf shape after coordinate all the nonzero element: ", np.array(tfidf.collect()).shape)
-    # print(tfidf.collect())
+    # for i in np.array(Positive_Reviews.collect()):
+    #    print(i)
 
-    # print(tfidf_T.collect())
-    tfidf_matrix = CoordinateMatrix(tfidf).toBlockMatrix().toLocalMatrix().toArray()
-    print("the shape of tfidf matrix: ", tfidf_matrix.shape)
-    dot_product_matrix = tfidf_matrix.dot(tfidf_matrix.T)
-    print("the shape of product of tfidf matrix and its transpose: ", dot_product_matrix.shape)
-    # print(dot_product_matrix)
-    tfidf_norm = np.sqrt(np.sum(tfidf_matrix ** 2, axis=1))[:, np.newaxis]  # /(num_Postive_Sentence - 1)
-    print("the shape of tfidf norm vector: ", tfidf_norm.shape)
-    norm_matrix = tfidf_norm.dot(tfidf_norm.T)
-    print("the shape of tfidf norm matrix: ", norm_matrix.shape)
-    # print(norm_matrix)
 
-    cos_dist = 1 - dot_product_matrix / norm_matrix
+    vector_set = np.array([])
+    with tf.Session() as session:
+        session.run([tf.global_variables_initializer(), tf.tables_initializer()])
+        index = 0
+        date_time = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
 
-    print(np.sum(cos_dist, axis=1))
+        message_embeddings = np.array(session.run(embed(Positive_Reviews_collect)))
+        print(message_embeddings.shape)
+        vector_set = message_embeddings.copy()
 
-    average_each = np.sum(cos_dist, axis=1) / (num_Postive_Sentence - 1)
-    overall = average_each.mean()
+        #print(date_time, ": ", "Num: ", index, message_embeddings.shape)
+        #vector_set = np.append(vector_set, message_embeddings[i, :])
+    vector_set = vector_set.reshape(-1, 512)
 
-    # print(average_each)
-    print(overall)
+    norm_vector = np.sqrt(np.sum(vector_set ** 2, axis=1))[:, np.newaxis]
+
+    norm_matrix = norm_vector.dot(norm_vector.T)
+    dot_product_matrix = vector_set.dot(vector_set.T)
+    cosinedistance_matrix = 1 - dot_product_matrix / norm_matrix
+
+    # print(cosinedistance_matrix.shape)
+    # print(cosinedistance_matrix)
+
+    distance_for_each = (np.sum(cosinedistance_matrix, axis=1) / cosinedistance_matrix.shape[1])[:, np.newaxis]
+    distance_overall = np.mean(distance_for_each)
+    # print(distance)
+    # print(distance.shape)
     end = time.time()
     time_spent = end - start
-    f = open("sbmzz.txt", "w")
-    f.write("average_each: " + str(average_each))
-    f.write("overall: " + str(overall))
+    '''
+        for i, message_embedding in enumerate(np.array(message_embeddings).tolist()):
+            print("Message: {}".format(Positive_Reviews[i]))
+            print("Embedding size: {}".format(len(message_embedding)))
+            message_embedding_snippet = ", ".join(
+                (str(x) for x in message_embedding[:3]))
+            print("Embedding: [{}, ...]\n".format(message_embedding_snippet))
+    '''
+    f = open("Stage3.txt", 'w')
+    # f.write(str(Positive_Reviews.collect()))
+    f.write("total time spent: " + str(time_spent) + "s" + "\n")
+    f.write("Average distance between one sentence with others" + "\n" + str(distance_for_each) + "\n")
+    f.write("Overall Average distance: " + str(distance_overall))
     f.close()
