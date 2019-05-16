@@ -60,29 +60,29 @@ if __name__ == "__main__":
     # print(tfidf_T.collect())
 
     dot_product_matrix = CoordinateMatrix(tfidf_T)
-    #print(dot_product_matrix.toBlockMatrix().toLocalMatrix())
+    # print(dot_product_matrix.toBlockMatrix().toLocalMatrix())
     cosine_similarity = dot_product_matrix.toIndexedRowMatrix().columnSimilarities()  # .toBlockMatrix().toLocalMatrix().toArray()
     print(type(cosine_similarity))
-    #print(cosine_similarity.entries.collect())
-    print(cosine_similarity.numCols(), cosine_similarity.numRows())
-    #print(cosine_similarity.toBlockMatrix().toLocalMatrix())
     # print(cosine_similarity.entries.collect())
-    #NP_cos_sim = cosine_similarity.toBlockMatrix().toLocalMatrix().toArray().copy()
+    print(cosine_similarity.numCols(), cosine_similarity.numRows())
+    # print(cosine_similarity.toBlockMatrix().toLocalMatrix())
+    # print(cosine_similarity.entries.collect())
+    # NP_cos_sim = cosine_similarity.toBlockMatrix().toLocalMatrix().toArray().copy()
 
     sum_of_similarity = cosine_similarity.entries \
-    .filter(lambda x: x.value > 1e-6) \
-    .map(lambda x: (x.i, x.j, 1 - x.value)) \
-    .map(lambda x: (0, x[2])) \
-    .reduceByKey(lambda x, y: x + y) \
-    .collect()
-    print(sum_of_similarity)
-    the_1 = (cosine_similarity.numRows()*cosine_similarity.numCols() - cosine_similarity.numRows())/2 - cosine_similarity.entries.count()
-    final = (sum_of_similarity[0][1]+the_1)*2/(num_Postive_Sentence*(num_Postive_Sentence-1))
-    print(final)
+        .flatMap(lambda x: ((x.j, x.i, x.value), (x.i, x.j, x.value))) \
+        .map(lambda x: (x[0], x[1], 1 - x[2])) \
+        .map(lambda x: (x[0], (1, x[2]))) \
+        .reduceByKey(lambda x, y: (x[0] + y[0], x[1] + y[1])) \
+        .map(lambda x: (x[0], x[1][1] + num_Postive_Sentence - x[1][0])) \
+        .map(lambda x: (x[0], x[1] / (num_Postive_Sentence - 1))) \
+        .collect()
+
+    print(len(sum_of_similarity))
+
     end = time.time()
     time_spent = end - start
-    f = open("Stage4.txt","w")
-    f.write("time_spent: "+str(time_spent)+"\n")
-    f.write("the final is:" + str(final) +"\n")
+    f = open("Stage4.txt", "w")
+    f.write("time_spent: " + str(time_spent) + "\n")
+    f.write("the final is:" + str(np.array(sorted(sum_of_similarity))) + "\n")
     f.close()
-
