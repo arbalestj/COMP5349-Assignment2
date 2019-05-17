@@ -35,14 +35,14 @@ if __name__ == "__main__":
 
     '''
     Step2: sort the customers and extract what we want:
-    
+
     1. access the RDD: (Customer_id, Num_of_reviews_this_customer_published), this tuple is treated as a Key-Value Pair,
     where the Customer_id is the Key, the number of reviews this customer published is the Value.
     2. Sort by values
     3. Give index to each Key-Value pair: (Key, Value) ---> ((Key, Value), Index)
     4. Choose the specific median one: filter(lambada x: the_index_of_x is mid)
     Now we got the result
-    
+
     After we apply .collect() to the result, we got: [((Key, Value), Index)], 
     we should access the Value, that is, the num of reviews this customer published,
     So we apply [0][0][1]
@@ -89,53 +89,35 @@ if __name__ == "__main__":
     Top10_Customers = Filter_Result \
         .map(lambda x: (x[0], x[2])) \
         .reduceByKey(lambda x, y: np.append(np.array(x), y)) \
-        .map(sort) \
+        .map(case_sort) \
         .map(lambda x: (x[0], x[1][middle(len(x[1]))])) \
         .sortBy(lambda x: x[1], ascending=False) \
         .take(10)
-
 
     Top10_Products = Filter_Result \
         .map(lambda x: (x[1], x[2])) \
         .reduceByKey(lambda x, y: np.append(np.array(x), y)) \
-        .map(sort) \
+        .map(case_sort) \
         .map(lambda x: (x[0], x[1][middle(len(x[1]))])) \
         .sortBy(lambda x: x[1], ascending=False) \
         .take(10)
-'''
- Top10_Customers = Filter_Result \
-    .map(customers_with_sentence_num) \
-    .reduceByKey(lambda x, y: x.append(y[0])) \
-    .map(lambda x: (x[0], sorted(x[1]))) \
-    .map(lambda x: (x[0], x[1][middle(len(x[1]))])) \
-    .sortBy(lambda x: x[1], ascending=False) \
-    .take(10)
 
-Top10_Products = Filter_Result \
-    .map(products_with_sentence_num) \
-    .reduceByKey(lambda x, y: x + y) \
-    .map(lambda x: (x[0], sorted(x[1]))) \
-    .map(lambda x: (x[0], x[1][middle(len(x[1]))])) \
-    .sortBy(lambda x: x[1], ascending=False) \
-    .take(10)
-'''
+    print(Top10_Customers)
+    print(Top10_Products)
 
-print(Top10_Customers)
-print(Top10_Products)
+    end = time.time()
 
-end = time.time()
+    f = open("Stage2.txt", "w")
+    f.write("time spent: " + str(end - start) + "\n")
+    f.write("Num of Reviews: " + str(Num_of_Reviews) + "\n")
 
-f = open("Stage2.txt", "w")
-f.write("time spent: " + str(end - start) + "\n")
-f.write("Num of Reviews: " + str(Num_of_Reviews) + "\n")
+    f.write("Num of Customers: " + str(Num_of_Customers) + "\n")
+    f.write("Median_num_of_reviews_a_user_published: " + str(Median_num_of_reviews_a_user_published) + "\n")
 
-f.write("Num of Customers: " + str(Num_of_Customers) + "\n")
-f.write("Median_num_of_reviews_a_user_published: " + str(Median_num_of_reviews_a_user_published) + "\n")
+    f.write("Num of Products: " + str(Num_of_Products) + "\n")
+    f.write("Median_num_of_reviews_a_product_received: " + str(Median_num_of_reviews_a_product_received) + "\n")
 
-f.write("Num of Products: " + str(Num_of_Products) + "\n")
-f.write("Median_num_of_reviews_a_product_received: " + str(Median_num_of_reviews_a_product_received) + "\n")
-
-f.write("Top10_Customers" + str(Top10_Customers) + "\n")
-f.write("Top10_Products" + str(Top10_Products) + "\n")
-f.close()
-print(end - start)
+    f.write("Top10_Customers" + str(Top10_Customers) + "\n")
+    f.write("Top10_Products" + str(Top10_Products) + "\n")
+    f.close()
+    print(end - start)
