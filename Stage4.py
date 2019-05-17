@@ -66,6 +66,7 @@ if __name__ == "__main__":
         .map(lambda x: [x[1], [x[0], x[2]]]) \
         .reduceByKey(lambda x, y: np.vstack([x, y])) \
         .map(lambda x: (x[0], np.array(x[1]).reshape(-1, 2))) \
+        .map(lambda x: (x[0], x[1][x[1][:, 0].argsort()])) \
         .map(lambda x: (x[0], SparseVector(num_Postive_Sentence, x[1][:, 0], x[1][:, 1])))
     print(tfidf_T.collect())
     tfidf_matrix = IndexedRowMatrix(tfidf_T)
@@ -84,8 +85,8 @@ if __name__ == "__main__":
         .map(lambda x: (x[0], x[1] / (num_Postive_Sentence - 1)))
 
     avg_dist_overall = avg_dist_each.map(lambda x: (0, x[1])) \
-        .reduceByKey(lambda x, y: x + y) \
-        .values().collect()[0] / num_Postive_Sentence
+                           .reduceByKey(lambda x, y: x + y) \
+                           .values().collect()[0] / num_Postive_Sentence
 
     center_index = np.argmin(np.array(avg_dist_each.collect()))
     print(center_index)
@@ -99,7 +100,7 @@ if __name__ == "__main__":
     print(center_sim.take(10))
     print(center_sim.collect())
     f = open("Stage4.txt", "w")
-    f.write("overall average_distance: "+str(avg_dist_overall) + "\n")
+    f.write("overall average_distance: " + str(avg_dist_overall) + "\n")
     f.write("the center index is: " + str(center_index) + "\n")
     f.write("the center sentence is: " + str(Positive_Reviews.lookup(center_index)) + "\n")
     f.write("the 10 closest sentences to center sentence is: " + "\n")

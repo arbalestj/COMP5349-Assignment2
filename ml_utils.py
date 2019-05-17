@@ -53,7 +53,7 @@ def customers_products_sennum(record):
     return (user_id, products_id, sentence_num)
 
 
-def sort(x):
+def case_sort(x):
     if isinstance(x[1], int) is True:
         return (x[0], np.array([x[1]]))
     else:
@@ -96,9 +96,18 @@ def MatrixProduct_Spark(mat1, mat2):
     matrix = CoordinateMatrix(matrix_entries)
     return matrix
 
+
 def explode(row):
     vec, i = row
     for j, v in zip(vec.indices, vec.values):
-        # print("vec.indices", vec.indices)
-        # print("vec.values", vec.values)
         yield i, j, v
+
+
+def Split(x):
+    review_id, sentence_list = x
+    for i in sentence_list:
+        yield review_id, i
+
+def Combine(x):
+    row, col_data = x
+    # for i in col_data:
