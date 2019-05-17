@@ -27,6 +27,14 @@ def middle(x):
     return int(x / 2) if x % 2 == 1 else int(x / 2) - 1
 
 
+def customers_products_sennum(record):
+    mzz = record.split("\t")
+    user_id = mzz[1]
+    products_id = mzz[3]
+    sentence_num = len(splitSentence(mzz[13]))
+    return (user_id, products_id, sentence_num)
+
+
 def countReview(record):
     mzz = record.split("\t")
     return (mzz[2], 1)
@@ -39,6 +47,7 @@ def countCustomer(record):
     # print(len(mzz))
     return (mzz[1], 1)
 
+
 def countProduct(record):
     mzz = record.split("\t")
     return (mzz[3], 1)
@@ -50,6 +59,7 @@ def case_sort(x):
     else:
         return (x[0], sorted(x[1]))
 
+
 def explode(row):
     vec, i = row
     for j, v in zip(vec.indices, vec.values):
@@ -60,4 +70,3 @@ def Split(x):
     review_id, sentence_list = x
     for i in sentence_list:
         yield review_id, i
-
