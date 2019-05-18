@@ -30,15 +30,13 @@ if __name__ == "__main__":
         .map(lambda x: (x[1], x[0]))
 
     Negative_Reviews_body = Negative_Reviews.map(lambda x: x[1][1])
-    Positive_Reviews_collect = Negative_Reviews_body.collect()
 
     num_Negative_Sentence = Negative_Reviews.count()
-
+    print(num_Negative_Sentence)
     from pyspark.mllib.feature import HashingTF, IDF
 
     hashingTF = HashingTF()
     tf = hashingTF.transform(Negative_Reviews_body)
-
     idf = IDF().fit(tf)
     tfidf = idf.transform(tf)
 
@@ -49,11 +47,10 @@ if __name__ == "__main__":
         .reduceByKey(lambda x, y: np.vstack([x, y])) \
         .map(lambda x: (x[0], np.array(x[1]).reshape(-1, 2))) \
         .map(lambda x: (x[0], x[1][x[1][:, 0].argsort()])) \
-        .map(lambda x: (x[0], SparseVector(num_Negative_Sentence, x[1][:, 0], x[1][:, 1])))
+        .map(lambda x: \
+        IndexedRow(x[0], SparseVector(num_Negative_Sentence, x[1][:, 0], x[1][:, 1])))
 
-    tfidf_matrix = IndexedRowMatrix(tfidf_T)
-
-    cosine_similarity = tfidf_matrix.columnSimilarities()
+    cosine_similarity = IndexedRowMatrix(tfidf_T).columnSimilarities()
 
     sim_matrix_full = cosine_similarity.entries \
         .flatMap(lambda x: ((x.j, x.i, x.value), (x.i, x.j, x.value)))
@@ -78,7 +75,7 @@ if __name__ == "__main__":
         .filter(lambda x: x[0] == center_index) \
         .sortBy(lambda x: x[1][1], ascending=False) \
         .map(lambda x: x[1])
-
+    print(center_sim.collect())
     f = open("Stage4_Negative.txt", "w")
     f.write("overall average_distance: " + str(avg_dist_overall) + "\n")
     f.write("the center index is: " + str(center_index) + "\n")

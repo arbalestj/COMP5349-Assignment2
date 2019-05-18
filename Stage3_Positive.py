@@ -11,9 +11,9 @@ embed = hub.Module(model_url)
 
 os.environ['JAVA_HOME'] = "/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home"
 
-# memory = '6g'
-# pyspark_submit_args = ' --driver-memory ' + memory + ' pyspark-shell'
-# os.environ["PYSPARK_SUBMIT_ARGS"] = pyspark_submit_args
+memory = '6g'
+pyspark_submit_args = ' --driver-memory ' + memory + ' pyspark-shell'
+os.environ["PYSPARK_SUBMIT_ARGS"] = pyspark_submit_args
 
 if __name__ == "__main__":
     start = time.time()
@@ -31,12 +31,6 @@ if __name__ == "__main__":
 
     Positive_Reviews_body = Positive_Reviews.map(lambda x: x[1][0])
     print(Positive_Reviews.count())
-
-    Negative_Reviews = music.og \
-        .filter(lambda x: x.split("\t")[3] == select_PID) \
-        .filter(lambda x: int(x.split("\t")[7]) <= 2) \
-        .flatMap(lambda x: splitSentence(x.split("\t")[13]))
-    print(Negative_Reviews.count())
 
     Positive_Reviews_collect = Positive_Reviews_body.collect()
 
@@ -59,7 +53,7 @@ if __name__ == "__main__":
     distance_overall = np.mean(distance_for_each)
     end = time.time()
     time_spent = end - start
-    f = open("Stage3.txt", 'w')
+    f = open("Stage3_Positive.txt", 'w')
     # f.write(str(Positive_Reviews.collect()))
     f.write("total time spent: " + str(time_spent) + "s" + "\n")
     # f.write("the distance matrix:" + str(cosinedistance_matrix) + "\n")

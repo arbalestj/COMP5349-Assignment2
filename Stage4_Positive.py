@@ -28,7 +28,6 @@ if __name__ == "__main__":
         .map(lambda x: (x[1], x[0]))
 
     Positive_Reviews_body = Positive_Reviews.map(lambda x: x[1][1])
-    Positive_Reviews_collect = Positive_Reviews_body.collect()
 
     num_Postive_Sentence = Positive_Reviews.count()
 
@@ -77,7 +76,7 @@ if __name__ == "__main__":
         .filter(lambda x: x[0] == center_index) \
         .sortBy(lambda x: x[1][1], ascending=False) \
         .map(lambda x: x[1])
-
+    print(center_sim.collect())
     f = open("Stage4_Positive.txt", "w")
     f.write("overall average_distance: " + str(avg_dist_overall) + "\n")
     f.write("the center index is: " + str(center_index) + "\n")
