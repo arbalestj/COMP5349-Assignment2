@@ -47,8 +47,7 @@ if __name__ == "__main__":
         .reduceByKey(lambda x, y: np.vstack([x, y])) \
         .map(lambda x: (x[0], np.array(x[1]).reshape(-1, 2))) \
         .map(lambda x: (x[0], x[1][x[1][:, 0].argsort()])) \
-        .map(lambda x: \
-        IndexedRow(x[0], SparseVector(num_Negative_Sentence, x[1][:, 0], x[1][:, 1])))
+        .map(lambda x: IndexedRow(x[0], SparseVector(num_Negative_Sentence, x[1][:, 0], x[1][:, 1])))
 
     cosine_similarity = IndexedRowMatrix(tfidf_T).columnSimilarities()
 

@@ -33,8 +33,6 @@ if __name__ == "__main__":
 
     from pyspark.mllib.feature import HashingTF, IDF
 
-    # Load documents (one per line).
-
     hashingTF = HashingTF()
     tf = hashingTF.transform(Positive_Reviews_body)
 
@@ -50,9 +48,7 @@ if __name__ == "__main__":
         .map(lambda x: (x[0], x[1][x[1][:, 0].argsort()])) \
         .map(lambda x: (x[0], SparseVector(num_Postive_Sentence, x[1][:, 0], x[1][:, 1])))
 
-    tfidf_matrix = IndexedRowMatrix(tfidf_T)
-
-    cosine_similarity = tfidf_matrix.columnSimilarities()
+    cosine_similarity = IndexedRowMatrix(tfidf_T).columnSimilarities()
 
     sim_matrix_full = cosine_similarity.entries \
         .flatMap(lambda x: ((x.j, x.i, x.value), (x.i, x.j, x.value)))
