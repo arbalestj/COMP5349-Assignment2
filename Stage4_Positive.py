@@ -7,11 +7,11 @@ from pyspark.mllib.linalg import SparseVector
 np.set_printoptions(threshold=np.inf)
 import time
 
-os.environ['JAVA_HOME'] = "/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home"
+#os.environ['JAVA_HOME'] = "/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home"
 
-memory = '6g'
-pyspark_submit_args = ' --driver-memory ' + memory + ' pyspark-shell'
-os.environ["PYSPARK_SUBMIT_ARGS"] = pyspark_submit_args
+#memory = '6g'
+#pyspark_submit_args = ' --driver-memory ' + memory + ' pyspark-shell'
+#os.environ["PYSPARK_SUBMIT_ARGS"] = pyspark_submit_args
 
 if __name__ == "__main__":
     start = time.time()

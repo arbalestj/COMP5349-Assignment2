@@ -57,10 +57,11 @@ if __name__ == "__main__":
     # f.write(str(Positive_Reviews.collect()))
     f.write("total time spent: " + str(time_spent) + "s" + "\n")
     # f.write("the distance matrix:" + str(cosinedistance_matrix) + "\n")
+    f.write("the index of central sentence: " + str(center_index) + "\n")
     f.write("the center sentence for positive reviews: " + str(Positive_Reviews.lookup(center_index)) + "\n")
     f.write("the 10 closest sentences for positive central sentence: " + "\n")
     for i in Closet10_Index:
-        f.write(str(Positive_Reviews.lookup(i))+"\n")
+        f.write(str(Positive_Reviews.lookup(i)) + "\n")
     f.write("Average distance between one sentence with others" + "\n" + str(distance_for_each) + "\n")
     f.write("Overall Average distance: " + str(distance_overall))
     f.close()

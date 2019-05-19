@@ -102,8 +102,7 @@ if __name__ == "__main__":
         .sortBy(lambda x: x[1], ascending=False) \
         .take(10)
 
-    print(Top10_Customers)
-    print(Top10_Products)
+
 
     end = time.time()
 
@@ -120,4 +119,3 @@ if __name__ == "__main__":
     f.write("Top10_Customers" + str(Top10_Customers) + "\n")
     f.write("Top10_Products" + str(Top10_Products) + "\n")
     f.close()
-    print(end - start)

@@ -5,6 +5,10 @@ import time
 
 os.environ['JAVA_HOME'] = "/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home"
 
+memory = '6g'
+pyspark_submit_args = ' --driver-memory ' + memory + ' pyspark-shell'
+os.environ["PYSPARK_SUBMIT_ARGS"] = pyspark_submit_args
+
 if __name__ == "__main__":
     start = time.time()
     music = Music()
@@ -14,14 +18,14 @@ if __name__ == "__main__":
     Num_of_Customers = music.Customers.count()
     Num_of_Products = music.Products.count()
 
-    # Stage 1: user-review distribution
+    # user-review distribution
     most_reviews_a_user_create = music.Customers.values().max()
 
     Sorted_Customers = music.Customers.sortBy(lambda x: x[1], ascending=False)
     Top10_Reviewers = Sorted_Customers.take(10)
     Median_of_Reviewers = Sorted_Customers.collect()[middle(Num_of_Customers)]
 
-    # Stage 1: product-review distribution
+    # product-review distribution
     most_reviews_a_product_has = music.Products.values().max()
 
     Sorted_Products = music.Products.sortBy(lambda x: x[1], ascending=False)

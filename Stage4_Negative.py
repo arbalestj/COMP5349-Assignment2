@@ -7,8 +7,6 @@ from pyspark.mllib.linalg import SparseVector
 np.set_printoptions(threshold=np.inf)
 import time
 
-from datetime import datetime
-
 os.environ['JAVA_HOME'] = "/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home"
 
 memory = '6g'
@@ -61,11 +59,8 @@ if __name__ == "__main__":
         .map(lambda x: (x[0], x[1][1] + num_Negative_Sentence - x[1][0] - 1)) \
         .map(lambda x: (x[0], x[1] / (num_Negative_Sentence - 1)))
 
-    avg_dist_overall = avg_dist_each.map(lambda x: (0, x[1])) \
-                           .reduceByKey(lambda x, y: x + y) \
-                           .values().collect()[0] / num_Negative_Sentence
-
     avg_dist_each_vector = np.array(avg_dist_each.collect())
+    avg_dist_overall = np.mean(avg_dist_each_vector)
 
     center_index = avg_dist_each_vector[avg_dist_each_vector[:, 1].argsort()][0, 0]
 
@@ -77,6 +72,7 @@ if __name__ == "__main__":
     print(center_sim.collect())
     f = open("Stage4_Negative.txt", "w")
     f.write("overall average_distance: " + str(avg_dist_overall) + "\n")
+    f.write("the index of central sentence: " + str(center_index) + "\n")
     f.write("the center index is: " + str(center_index) + "\n")
     f.write("the center sentence is: " + str(Negative_Reviews.lookup(center_index)) + "\n")
     f.write("the 10 closest sentences to center sentence is: " + "\n")
