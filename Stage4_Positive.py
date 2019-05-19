@@ -54,16 +54,12 @@ if __name__ == "__main__":
         .flatMap(lambda x: ((x.j, x.i, x.value), (x.i, x.j, x.value)))
 
     avg_dist_each = sim_matrix_full \
-        .map(lambda x: (x[0], x[1], 1 - x[2])) \
-        .map(lambda x: (x[0], (1, x[2]))) \
+        .map(lambda x: (x[0], (1, 1-x[2]))) \
         .reduceByKey(lambda x, y: (x[0] + y[0], x[1] + y[1])) \
-        .map(lambda x: (x[0], x[1][1] + num_Postive_Sentence - x[1][0] - 1)) \
-        .map(lambda x: (x[0], x[1] / (num_Postive_Sentence - 1)))
+        .map(lambda x: (x[0], (x[1][1] + num_Postive_Sentence - x[1][0] - 1)/ (num_Postive_Sentence - 1)))
 
-    avg_dist_overall = avg_dist_each.map(lambda x: (0, x[1])) \
-                           .reduceByKey(lambda x, y: x + y) \
-                           .values().collect()[0] / num_Postive_Sentence
     avg_dist_each_vector = np.array(avg_dist_each.collect())
+    avg_dist_overall = np.mean(avg_dist_each_vector)
 
     center_index = avg_dist_each_vector[avg_dist_each_vector[:, 1].argsort()][0, 0]
 
@@ -72,8 +68,8 @@ if __name__ == "__main__":
         .filter(lambda x: x[0] == center_index) \
         .sortBy(lambda x: x[1][1], ascending=False) \
         .map(lambda x: x[1])
-    print(center_sim.collect())
-    f = open("Stage4_Positive.txt", "w")
+
+    f = open("Stage4_Positive_test.txt", "w")
     f.write("overall average_distance: " + str(avg_dist_overall) + "\n")
     f.write("the center index is: " + str(center_index) + "\n")
     f.write("the center sentence is: " + str(Positive_Reviews.lookup(center_index)) + "\n")
